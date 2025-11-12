@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomInBtn = document.getElementById('zoom-in-btn');
     const zoomOutBtn = document.getElementById('zoom-out-btn');
     const resetZoomBtn = document.getElementById('reset-zoom-btn');
-    const zoomPercentage = document.getElementById('zoom-percentage');
+    const zoomPercentageInput = document.getElementById('zoom-percentage-input');
     const zoomPercentageContainer = document.getElementById('zoom-percentage-container');
 
     // Create a hidden file input
@@ -54,11 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Controls the visibility and animation of the zoom percentage display
     const updateZoomDisplay = () => {
-        zoomPercentage.textContent = `${Math.round(zoom * 100)}%`;
+        zoomPercentageInput.value = `${Math.round(zoom * 100)}%`;
         if (zoom === 1) {
-            zoomPercentageContainer.classList.add('scale-0');
+            zoomPercentageContainer.classList.remove('h-8', 'my-1', 'px-2.5');
+            zoomPercentageContainer.classList.add('h-0', 'my-0', 'px-0', 'border-none');
+            zoomPercentageInput.classList.add('hidden');
         } else {
-            zoomPercentageContainer.classList.remove('scale-0');
+            zoomPercentageContainer.classList.add('h-8', 'my-1', 'px-2.5');
+            zoomPercentageContainer.classList.remove('h-0', 'my-0', 'px-0', 'border-none');
+            zoomPercentageInput.classList.remove('hidden');
         }
     };
 
@@ -110,6 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
         panOffsetX = 0; // Also reset pan on zoom reset
         panOffsetY = 0;
         redrawCanvas();
+    });
+
+    // Handle manual zoom input
+    zoomPercentageInput.addEventListener('blur', () => {
+        const newZoom = parseInt(zoomPercentageInput.value.replace('%', ''));
+        if (!isNaN(newZoom)) {
+            zoom = newZoom / 100;
+            redrawCanvas();
+        }
     });
 
     // Panning event listeners on the canvas
