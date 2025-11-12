@@ -6,23 +6,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const imagePrompt = document.getElementById('image-prompt');
     const canvas = document.getElementById('editor-canvas');
     const ctx = canvas.getContext('2d');
+    const drawingCanvas = document.getElementById('drawing-canvas');
+    const drawingCtx = drawingCanvas.getContext('2d');
     const zoomInBtn = document.getElementById('zoom-in-btn');
     const zoomOutBtn = document.getElementById('zoom-out-btn');
     const resetZoomBtn = document.getElementById('reset-zoom-btn');
     const zoomPercentageInput = document.getElementById('zoom-percentage-input');
     const zoomPercentageContainer = document.getElementById('zoom-percentage-container');
     const zoomControls = document.getElementById('zoom-controls');
+    const drawBtn = document.querySelector('button[title="Desenhar"]');
+    const eraserBtn = document.querySelector('button[title="Borracha"]');
+    const colorPickerBtn = document.getElementById('color-picker-btn');
+    const colorPreview = document.getElementById('color-preview');
+    const brushSizeSmBtn = document.getElementById('brush-size-sm-btn');
+    const brushSizeMdBtn = document.getElementById('brush-size-md-btn');
+    const brushSizeLgBtn = document.getElementById('brush-size-lg-btn');
 
-    // Create a hidden file input
+    // Create a hidden file input for images and a color input
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.style.display = 'none';
 
     // State
     let currentImage = null;
     let zoom = 1;
     const ZOOM_STEP = 0.1;
+    let currentMode = 'pan'; // pan, draw, erase
+    let brushColor = '#FF0000'; // Default red
+    let brushSize = 5; // Default medium size
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
 
     // Panning state
     let isPanning = false;
@@ -31,25 +49,28 @@ document.addEventListener('DOMContentLoaded', () => {
     let panOffsetX = 0;
     let panOffsetY = 0;
 
-    // Redraws the image on the canvas with the current zoom level
+    // Redraws both canvases with the current zoom and pan
     const redrawCanvas = () => {
         if (!currentImage) return;
 
-        // Clear canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Temporarily hide the drawing canvas to redraw the image without flickering
+        drawingCanvas.style.display = 'none';
 
-        // Calculate the scaled dimensions
+        // Clear and redraw the main (image) canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
         const scaledWidth = currentImage.width * zoom;
         const scaledHeight = currentImage.height * zoom;
-
-        // Calculate the top-left position to center the image, including the pan offset
         const x = (canvas.width - scaledWidth) / 2 + panOffsetX;
         const y = (canvas.height - scaledHeight) / 2 + panOffsetY;
+        ctx.translate(x, y);
+        ctx.scale(zoom, zoom);
+        ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
+        ctx.restore();
 
-        // Draw the image with the new zoom level and pan position
-        ctx.drawImage(currentImage, x, y, scaledWidth, scaledHeight);
+        // After the image is drawn, show the drawing canvas again
+        drawingCanvas.style.display = 'block';
 
-        // Update the zoom percentage display
         updateZoomDisplay();
     };
 
@@ -76,20 +97,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.onload = () => {
                     currentImage = img;
 
-                    // Set canvas size to its container's size for a responsive view
                     const container = canvas.parentElement;
-                    canvas.width = container.clientWidth;
-                    canvas.height = container.clientHeight;
+                    [canvas, drawingCanvas].forEach(cnv => {
+                        cnv.width = container.clientWidth;
+                        cnv.height = container.clientHeight;
+                    });
 
-                    // Reset zoom and pan, then redraw
                     zoom = 1;
                     panOffsetX = 0;
                     panOffsetY = 0;
                     redrawCanvas();
 
-                    // Hide prompt, show canvas, and show zoom controls
                     imagePrompt.classList.add('hidden');
                     canvas.classList.remove('hidden');
+                    drawingCanvas.classList.remove('hidden');
                     zoomControls.classList.remove('opacity-0');
                 };
                 img.src = event.target.result;
@@ -98,6 +119,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Mode Switching
+    drawBtn.addEventListener('click', () => {
+        currentMode = currentMode === 'draw' ? 'pan' : 'draw';
+        updateCursorAndButtonState();
+    });
+
+    eraserBtn.addEventListener('click', () => {
+        currentMode = currentMode === 'erase' ? 'pan' : 'erase';
+        updateCursorAndButtonState();
+    });
+
+    const updateCursorAndButtonState = () => {
+        // Reset both buttons
+        drawBtn.classList.remove('bg-primary/20', 'text-primary');
+        eraserBtn.classList.remove('bg-primary/20', 'text-primary');
+
+        if (currentMode === 'draw') {
+            drawBtn.classList.add('bg-primary/20', 'text-primary');
+            drawingCanvas.style.cursor = 'crosshair';
+        } else if (currentMode === 'erase') {
+            eraserBtn.classList.add('bg-primary/20', 'text-primary');
+            drawingCanvas.style.cursor = 'crosshair'; // Or a different cursor for eraser
+        } else { // pan mode
+            drawingCanvas.style.cursor = 'grab';
+        }
+    };
+
+    // Drawing Logic
+    const getTransformedPoint = (x, y) => {
+        const scaledWidth = currentImage.width * zoom;
+        const scaledHeight = currentImage.height * zoom;
+        const canvasX = (canvas.width - scaledWidth) / 2 + panOffsetX;
+        const canvasY = (canvas.height - scaledHeight) / 2 + panOffsetY;
+
+        const originalX = (x - canvasX) / zoom;
+        const originalY = (y - canvasY) / zoom;
+
+        return { x: originalX, y: originalY };
+    };
+
+    const drawOnCanvas = (e) => {
+        if (!isDrawing) return;
+
+        const point = getTransformedPoint(e.offsetX, e.offsetY);
+
+        // Set composite operation for drawing vs erasing
+        drawingCtx.globalCompositeOperation = currentMode === 'erase' ? 'destination-out' : 'source-over';
+
+        // Set brush properties
+        drawingCtx.strokeStyle = brushColor;
+        drawingCtx.lineWidth = brushSize;
+        drawingCtx.lineJoin = 'round';
+        drawingCtx.lineCap = 'round';
+
+        drawingCtx.beginPath();
+        drawingCtx.moveTo(lastX, lastY);
+        drawingCtx.lineTo(point.x, point.y);
+        drawingCtx.stroke();
+
+        [lastX, lastY] = [point.x, point.y];
+    };
+
+    // Event Listeners for Drawing and Panning
+    drawingCanvas.addEventListener('mousedown', (e) => {
+        if (currentMode === 'draw' || currentMode === 'erase') {
+            isDrawing = true;
+            const point = getTransformedPoint(e.offsetX, e.offsetY);
+            [lastX, lastY] = [point.x, point.y];
+        } else { // pan mode
+            isPanning = true;
+            panStartX = e.clientX - panOffsetX;
+            panStartY = e.clientY - panOffsetY;
+            drawingCanvas.style.cursor = 'grabbing';
+        }
+    });
+
+    drawingCanvas.addEventListener('mousemove', (e) => {
+        if ((currentMode === 'draw' || currentMode === 'erase') && isDrawing) {
+            drawOnCanvas(e);
+        } else if (isPanning) {
+            panOffsetX = e.clientX - panStartX;
+            panOffsetY = e.clientY - panOffsetY;
+            redrawCanvas();
+        }
+    });
+
+    drawingCanvas.addEventListener('mouseup', () => {
+        isDrawing = false;
+        if (isPanning) {
+            isPanning = false;
+            updateCursorAndButtonState();
+        }
+    });
+
+    drawingCanvas.addEventListener('mouseleave', () => {
+        isDrawing = false;
+        if (isPanning) {
+            isPanning = false;
+            updateCursorAndButtonState();
+        }
+    });
+
     // Zoom event listeners
     zoomInBtn.addEventListener('click', () => {
         zoom += ZOOM_STEP;
@@ -105,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     zoomOutBtn.addEventListener('click', () => {
-        if (zoom > ZOOM_STEP) { // Prevent zooming out too far
+        if (zoom > ZOOM_STEP) {
             zoom -= ZOOM_STEP;
             redrawCanvas();
         }
@@ -113,9 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resetZoomBtn.addEventListener('click', () => {
         zoom = 1;
-        panOffsetX = 0; // Also reset pan on zoom reset
+        panOffsetX = 0;
         panOffsetY = 0;
         redrawCanvas();
+        // Also clear drawing
+        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
     });
 
     // Handle manual zoom input
@@ -127,74 +252,70 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Panning event listeners on the canvas
-    canvas.addEventListener('mousedown', (e) => {
-        isPanning = true;
-        panStartX = e.clientX - panOffsetX;
-        panStartY = e.clientY - panOffsetY;
-        canvas.style.cursor = 'grabbing';
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-        if (isPanning) {
-            panOffsetX = e.clientX - panStartX;
-            panOffsetY = e.clientY - panStartY;
-            redrawCanvas();
-        }
-    });
-
-    canvas.addEventListener('mouseup', () => {
-        isPanning = false;
-        canvas.style.cursor = 'grab';
-    });
-
-    canvas.addEventListener('mouseleave', () => {
-        isPanning = false;
-        canvas.style.cursor = 'default';
-    });
-
-    // Change cursor to 'grab' when hovering over the canvas with an image
-    canvas.addEventListener('mouseover', () => {
-        if (currentImage) {
-            canvas.style.cursor = 'grab';
-        }
-    });
-
-    // Trigger file input when buttons are clicked
-    const openFileDialog = () => {
-        fileInput.click();
-    };
-
+    // File handling
+    const openFileDialog = () => fileInput.click();
     selectFileButton.addEventListener('click', openFileDialog);
     importFromFileButton.addEventListener('click', openFileDialog);
-
-    // Handle file selection from the dialog
-    fileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        handleFileSelect(file);
-    });
-
-    // Handle drag and drop
+    fileInput.addEventListener('change', (event) => handleFileSelect(event.target.files[0]));
     dropZone.addEventListener('dragover', (event) => {
         event.preventDefault();
         dropZone.classList.add('border-primary', 'bg-black/20');
     });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('border-primary', 'bg-black/20');
-    });
-
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('border-primary', 'bg-black/20'));
     dropZone.addEventListener('drop', (event) => {
         event.preventDefault();
         dropZone.classList.remove('border-primary', 'bg-black/20');
-        const file = event.dataTransfer.files[0];
-        handleFileSelect(file);
+        handleFileSelect(event.dataTransfer.files[0]);
     });
 
-    // Append the file input to the body
     document.body.appendChild(fileInput);
+    document.body.appendChild(colorInput);
 
-    // Hide zoom percentage and controls by default
+    // Brush Controls
+    colorPickerBtn.addEventListener('click', () => colorInput.click());
+
+    colorInput.addEventListener('input', (e) => {
+        brushColor = e.target.value;
+        colorPreview.style.backgroundColor = brushColor;
+    });
+
+    const updateBrushSizeUI = (selectedSize) => {
+        // Reset all buttons
+        [brushSizeSmBtn, brushSizeMdBtn, brushSizeLgBtn].forEach(btn => {
+            btn.classList.remove('bg-primary/20', 'text-primary');
+            btn.querySelector('div').classList.remove('bg-primary');
+            btn.querySelector('div').classList.add('bg-gray-300');
+        });
+
+        // Activate the selected one
+        if (selectedSize === 2) { // Small
+            brushSizeSmBtn.classList.add('bg-primary/20', 'text-primary');
+            brushSizeSmBtn.querySelector('div').classList.add('bg-primary');
+        } else if (selectedSize === 5) { // Medium
+            brushSizeMdBtn.classList.add('bg-primary/20', 'text-primary');
+            brushSizeMdBtn.querySelector('div').classList.add('bg-primary');
+        } else if (selectedSize === 10) { // Large
+            brushSizeLgBtn.classList.add('bg-primary/20', 'text-primary');
+            brushSizeLgBtn.querySelector('div').classList.add('bg-primary');
+        }
+    };
+
+    brushSizeSmBtn.addEventListener('click', () => {
+        brushSize = 2;
+        updateBrushSizeUI(brushSize);
+    });
+    brushSizeMdBtn.addEventListener('click', () => {
+        brushSize = 5;
+        updateBrushSizeUI(brushSize);
+    });
+    brushSizeLgBtn.addEventListener('click', () => {
+        brushSize = 10;
+        updateBrushSizeUI(brushSize);
+    });
+
+
+    // Initial state
     updateZoomDisplay();
     zoomControls.classList.add('opacity-0');
+    updateBrushSizeUI(brushSize); // Set initial brush size UI
 });
