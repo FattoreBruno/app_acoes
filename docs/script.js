@@ -57,12 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateZoomDisplay = () => {
         zoomPercentageInput.value = `${Math.round(zoom * 100)}%`;
         if (zoom === 1) {
-            zoomPercentageContainer.classList.remove('h-8', 'my-1', 'px-2.5');
-            zoomPercentageContainer.classList.add('h-0', 'my-0', 'px-0', 'border-none');
+            zoomPercentageContainer.classList.remove('h-8', 'my-1');
+            zoomPercentageContainer.classList.add('h-0', 'my-0', 'border-none');
             zoomPercentageInput.classList.add('hidden');
         } else {
-            zoomPercentageContainer.classList.add('h-8', 'my-1', 'px-2.5');
-            zoomPercentageContainer.classList.remove('h-0', 'my-0', 'px-0', 'border-none');
+            zoomPercentageContainer.classList.add('h-8', 'my-1');
+            zoomPercentageContainer.classList.remove('h-0', 'my-0', 'border-none');
             zoomPercentageInput.classList.remove('hidden');
         }
     };
