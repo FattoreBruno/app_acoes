@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetZoomBtn = document.getElementById('reset-zoom-btn');
     const zoomPercentageInput = document.getElementById('zoom-percentage-input');
     const zoomPercentageContainer = document.getElementById('zoom-percentage-container');
+    const zoomControls = document.getElementById('zoom-controls');
 
     // Create a hidden file input
     const fileInput = document.createElement('input');
@@ -86,9 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     panOffsetY = 0;
                     redrawCanvas();
 
-                    // Hide prompt and show canvas
+                    // Hide prompt, show canvas, and show zoom controls
                     imagePrompt.classList.add('hidden');
                     canvas.classList.remove('hidden');
+                    zoomControls.classList.remove('opacity-0');
                 };
                 img.src = event.target.result;
             };
@@ -192,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Append the file input to the body
     document.body.appendChild(fileInput);
 
-    // Hide zoom percentage by default
+    // Hide zoom percentage and controls by default
     updateZoomDisplay();
+    zoomControls.classList.add('opacity-0');
 });
