@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomOutBtn = document.getElementById('zoom-out-btn');
     const resetZoomBtn = document.getElementById('reset-zoom-btn');
     const zoomPercentage = document.getElementById('zoom-percentage');
+    const zoomPercentageContainer = document.getElementById('zoom-percentage-container');
 
     // Create a hidden file input
     const fileInput = document.createElement('input');
@@ -48,7 +49,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(currentImage, x, y, scaledWidth, scaledHeight);
 
         // Update the zoom percentage display
+        updateZoomDisplay();
+    };
+
+    // Controls the visibility and animation of the zoom percentage display
+    const updateZoomDisplay = () => {
         zoomPercentage.textContent = `${Math.round(zoom * 100)}%`;
+        if (zoom === 1) {
+            zoomPercentageContainer.classList.add('scale-0');
+        } else {
+            zoomPercentageContainer.classList.remove('scale-0');
+        }
     };
 
     // Function to handle file selection and drawing
@@ -167,4 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Append the file input to the body
     document.body.appendChild(fileInput);
+
+    // Hide zoom percentage by default
+    updateZoomDisplay();
 });
