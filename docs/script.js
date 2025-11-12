@@ -1,7 +1,15 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // UI Elements
     const selectFileButton = document.querySelector('button.bg-primary');
     const importFromFileButton = document.querySelectorAll('button.text-gray-400')[0];
     const dropZone = document.querySelector('.border-dashed');
+    const imagePrompt = document.getElementById('image-prompt');
+    const canvas = document.getElementById('editor-canvas');
+    const ctx = canvas.getContext('2d');
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const resetZoomBtn = document.getElementById('reset-zoom-btn');
+    const zoomPercentage = document.getElementById('zoom-percentage');
 
     // Create a hidden file input
     const fileInput = document.createElement('input');
@@ -9,23 +17,78 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
 
-    // Function to handle file selection
+    // State
+    let currentImage = null;
+    let zoom = 1;
+    const ZOOM_STEP = 0.1;
+
+    // Redraws the image on the canvas with the current zoom level
+    const redrawCanvas = () => {
+        if (!currentImage) return;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Calculate the scaled dimensions
+        const scaledWidth = currentImage.width * zoom;
+        const scaledHeight = currentImage.height * zoom;
+
+        // Calculate the top-left position to center the image
+        const x = (canvas.width - scaledWidth) / 2;
+        const y = (canvas.height - scaledHeight) / 2;
+
+        // Draw the image with the new zoom level
+        ctx.drawImage(currentImage, x, y, scaledWidth, scaledHeight);
+
+        // Update the zoom percentage display
+        zoomPercentage.textContent = `${Math.round(zoom * 100)}%`;
+    };
+
+    // Function to handle file selection and drawing
     const handleFileSelect = (file) => {
         if (file) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                const img = document.createElement('img');
-                img.src = event.target.result;
-                img.alt = 'Selected Image';
-                img.className = 'max-h-full max-w-full';
+                const img = new Image();
+                img.onload = () => {
+                    currentImage = img;
 
-                // Clear the drop zone and append the image
-                dropZone.innerHTML = '';
-                dropZone.appendChild(img);
+                    // Set canvas size to its container's size for a responsive view
+                    const container = canvas.parentElement;
+                    canvas.width = container.clientWidth;
+                    canvas.height = container.clientHeight;
+
+                    // Reset zoom and redraw
+                    zoom = 1;
+                    redrawCanvas();
+
+                    // Hide prompt and show canvas
+                    imagePrompt.classList.add('hidden');
+                    canvas.classList.remove('hidden');
+                };
+                img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         }
     };
+
+    // Zoom event listeners
+    zoomInBtn.addEventListener('click', () => {
+        zoom += ZOOM_STEP;
+        redrawCanvas();
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+        if (zoom > ZOOM_STEP) { // Prevent zooming out too far
+            zoom -= ZOOM_STEP;
+            redrawCanvas();
+        }
+    });
+
+    resetZoomBtn.addEventListener('click', () => {
+        zoom = 1;
+        redrawCanvas();
+    });
 
     // Trigger file input when buttons are clicked
     const openFileDialog = () => {

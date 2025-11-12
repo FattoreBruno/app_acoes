@@ -35,7 +35,8 @@
 <main class="flex h-full grow flex-col">
 <div class="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-8">
 <div class="relative flex h-full w-full max-w-7xl items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-600/60 bg-black/10">
-<div class="flex flex-col items-center gap-4 text-center text-gray-400">
+<canvas id="editor-canvas" class="hidden absolute top-0 left-0 w-full h-full"></canvas>
+<div id="image-prompt" class="flex flex-col items-center gap-4 text-center text-gray-400">
 <span class="material-symbols-outlined text-6xl text-gray-500">image</span>
 <div class="flex flex-col">
 <p class="font-semibold text-gray-300">Importe sua imagem</p>
@@ -68,16 +69,16 @@
 </div>
 </main>
 <div class="absolute left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-xl border border-white/10 bg-background-dark/50 p-1.5 shadow-2xl backdrop-blur-lg z-10">
-<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom In">
+<button id="zoom-in-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom In">
 <span class="material-symbols-outlined text-2xl">zoom_in</span>
 </button>
-<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Redefinir Zoom">
+<button id="reset-zoom-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Redefinir Zoom">
 <span class="material-symbols-outlined text-2xl">zoom_in_map</span>
 </button>
 <div class="my-1 flex h-8 items-center justify-center rounded-md bg-black/20 px-2.5">
-<span class="text-xs font-semibold text-white">100%</span>
+<span id="zoom-percentage" class="text-xs font-semibold text-white">100%</span>
 </div>
-<button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom Out">
+<button id="zoom-out-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom Out">
 <span class="material-symbols-outlined text-2xl">zoom_out</span>
 </button>
 </div>
