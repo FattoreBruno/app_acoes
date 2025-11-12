@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let zoom = 1;
     const ZOOM_STEP = 0.1;
 
+    // Panning state
+    let isPanning = false;
+    let panStartX = 0;
+    let panStartY = 0;
+    let panOffsetX = 0;
+    let panOffsetY = 0;
+
     // Redraws the image on the canvas with the current zoom level
     const redrawCanvas = () => {
         if (!currentImage) return;
@@ -33,11 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const scaledWidth = currentImage.width * zoom;
         const scaledHeight = currentImage.height * zoom;
 
-        // Calculate the top-left position to center the image
-        const x = (canvas.width - scaledWidth) / 2;
-        const y = (canvas.height - scaledHeight) / 2;
+        // Calculate the top-left position to center the image, including the pan offset
+        const x = (canvas.width - scaledWidth) / 2 + panOffsetX;
+        const y = (canvas.height - scaledHeight) / 2 + panOffsetY;
 
-        // Draw the image with the new zoom level
+        // Draw the image with the new zoom level and pan position
         ctx.drawImage(currentImage, x, y, scaledWidth, scaledHeight);
 
         // Update the zoom percentage display
@@ -58,8 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     canvas.width = container.clientWidth;
                     canvas.height = container.clientHeight;
 
-                    // Reset zoom and redraw
+                    // Reset zoom and pan, then redraw
                     zoom = 1;
+                    panOffsetX = 0;
+                    panOffsetY = 0;
                     redrawCanvas();
 
                     // Hide prompt and show canvas
@@ -87,7 +96,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     resetZoomBtn.addEventListener('click', () => {
         zoom = 1;
+        panOffsetX = 0; // Also reset pan on zoom reset
+        panOffsetY = 0;
         redrawCanvas();
+    });
+
+    // Panning event listeners on the canvas
+    canvas.addEventListener('mousedown', (e) => {
+        isPanning = true;
+        panStartX = e.clientX - panOffsetX;
+        panStartY = e.clientY - panOffsetY;
+        canvas.style.cursor = 'grabbing';
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (isPanning) {
+            panOffsetX = e.clientX - panStartX;
+            panOffsetY = e.clientY - panStartY;
+            redrawCanvas();
+        }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+        isPanning = false;
+        canvas.style.cursor = 'grab';
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        isPanning = false;
+        canvas.style.cursor = 'default';
+    });
+
+    // Change cursor to 'grab' when hovering over the canvas with an image
+    canvas.addEventListener('mouseover', () => {
+        if (currentImage) {
+            canvas.style.cursor = 'grab';
+        }
     });
 
     // Trigger file input when buttons are clicked
