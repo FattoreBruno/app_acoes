@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Create a hidden file input for images and a color input
     const fileInput = document.createElement('input');
+    fileInput.id = 'file-input';
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
@@ -33,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // State
     let currentImage = null;
-    let zoom = 1;
+    let zoom = 1; // This will be a multiplier of fitZoom
+    let fitZoom = 1; // The zoom level to fit the image to the canvas
     const ZOOM_STEP = 0.1;
     let currentMode = 'pan'; // pan, draw, erase
     let brushColor = '#FF0000'; // Default red
@@ -53,23 +55,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const redrawCanvas = () => {
         if (!currentImage) return;
 
-        // Temporarily hide the drawing canvas to redraw the image without flickering
-        drawingCanvas.style.display = 'none';
+        const totalZoom = fitZoom * zoom;
 
         // Clear and redraw the main (image) canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        const scaledWidth = currentImage.width * zoom;
-        const scaledHeight = currentImage.height * zoom;
+        const scaledWidth = currentImage.width * totalZoom;
+        const scaledHeight = currentImage.height * totalZoom;
         const x = (canvas.width - scaledWidth) / 2 + panOffsetX;
         const y = (canvas.height - scaledHeight) / 2 + panOffsetY;
         ctx.translate(x, y);
-        ctx.scale(zoom, zoom);
+        ctx.scale(totalZoom, totalZoom);
         ctx.drawImage(currentImage, 0, 0, currentImage.width, currentImage.height);
         ctx.restore();
-
-        // After the image is drawn, show the drawing canvas again
-        drawingCanvas.style.display = 'block';
 
         updateZoomDisplay();
     };
@@ -103,15 +101,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         cnv.height = container.clientHeight;
                     });
 
-                    zoom = 1;
+                    // Calculate the best fit zoom
+                    const scaleX = canvas.width / img.width;
+                    const scaleY = canvas.height / img.height;
+                    fitZoom = Math.min(scaleX, scaleY);
+
+                    zoom = 1; // Start at 100% of fitZoom
                     panOffsetX = 0;
                     panOffsetY = 0;
+
+                    // Clear any previous drawings
+                    drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+
                     redrawCanvas();
 
                     imagePrompt.classList.add('hidden');
                     canvas.classList.remove('hidden');
                     drawingCanvas.classList.remove('hidden');
                     zoomControls.classList.remove('opacity-0');
+                    window.imageLoaded = true; // Signal that the image is loaded
                 };
                 img.src = event.target.result;
             };
@@ -148,13 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Drawing Logic
     const getTransformedPoint = (x, y) => {
-        const scaledWidth = currentImage.width * zoom;
-        const scaledHeight = currentImage.height * zoom;
+        const totalZoom = fitZoom * zoom;
+        const scaledWidth = currentImage.width * totalZoom;
+        const scaledHeight = currentImage.height * totalZoom;
         const canvasX = (canvas.width - scaledWidth) / 2 + panOffsetX;
         const canvasY = (canvas.height - scaledHeight) / 2 + panOffsetY;
 
-        const originalX = (x - canvasX) / zoom;
-        const originalY = (y - canvasY) / zoom;
+        // Transform the point from canvas space back to original image space
+        const originalX = (x - canvasX) / totalZoom;
+        const originalY = (y - canvasY) / totalZoom;
 
         return { x: originalX, y: originalY };
     };
@@ -164,12 +174,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const point = getTransformedPoint(e.offsetX, e.offsetY);
 
+        drawingCtx.save(); // Save the clean state
+
+        // Apply the same transformations as the main canvas
+        const totalZoom = fitZoom * zoom;
+        const scaledWidth = currentImage.width * totalZoom;
+        const scaledHeight = currentImage.height * totalZoom;
+        const x = (canvas.width - scaledWidth) / 2 + panOffsetX;
+        const y = (canvas.height - scaledHeight) / 2 + panOffsetY;
+        drawingCtx.translate(x, y);
+        drawingCtx.scale(totalZoom, totalZoom);
+
         // Set composite operation for drawing vs erasing
         drawingCtx.globalCompositeOperation = currentMode === 'erase' ? 'destination-out' : 'source-over';
 
-        // Set brush properties
+        // Set brush properties (adjusting for zoom)
         drawingCtx.strokeStyle = brushColor;
-        drawingCtx.lineWidth = brushSize;
+        drawingCtx.lineWidth = brushSize / totalZoom; // Make brush size consistent regardless of zoom
         drawingCtx.lineJoin = 'round';
         drawingCtx.lineCap = 'round';
 
@@ -177,6 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         drawingCtx.moveTo(lastX, lastY);
         drawingCtx.lineTo(point.x, point.y);
         drawingCtx.stroke();
+
+        drawingCtx.restore(); // Restore to the clean state
 
         [lastX, lastY] = [point.x, point.y];
     };
@@ -239,8 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         panOffsetX = 0;
         panOffsetY = 0;
         redrawCanvas();
-        // Also clear drawing
-        drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+        // Don't clear drawing on zoom reset, user might want to keep it
     });
 
     // Handle manual zoom input
