@@ -387,26 +387,14 @@ document.addEventListener('DOMContentLoaded', () => {
         opacitySliderValue.textContent = `${e.target.value}%`;
     });
 
-    colorSwatches.forEach(swatch => {
-        swatch.addEventListener('click', () => {
-            colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
-            swatch.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
-            const color = window.getComputedStyle(swatch).backgroundColor;
-            // Set the color and dispatch the 'color' event, which will update the linked inputs.
-            alwan.setColor(color, true);
-        });
-    });
-
     // Initial state
     updateZoomDisplay();
     zoomControls.classList.add('opacity-0');
 
-    // Alwan Color Picker
+    // Alwan Color Picker Initialization
     const alwan = new Alwan('#color-picker-container', {
         theme: 'dark',
-        popover: false,
-        container: '#color-picker-container',
-        target: '#color-picker-container',
+        popover: false, // Make the picker inline
         inputs: {
             hex: '#hex-input',
             rgb: {
@@ -416,34 +404,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         },
         format: 'hex',
-        color: '#EF4444'
+        color: '#EF4444' // Initial color
     });
 
+    // Function to convert rgb string to hex
     const rgbToHex = (rgb) => {
+        if (!rgb || !rgb.match(/\d+/g)) return '#000000';
         const [r, g, b] = rgb.match(/\d+/g).map(Number);
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
     };
 
+    // Sync color swatches with the color picker
     colorSwatches.forEach(swatch => {
         swatch.addEventListener('click', () => {
+            // Remove ring from all swatches
             colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
+            // Add ring to the clicked swatch
             swatch.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
-            const color = window.getComputedStyle(swatch).backgroundColor;
-            const hexColor = rgbToHex(color);
 
-            alwan.setColor(hexColor);
-            hexInput.value = hexColor; // Force update
-            brushColor = color;
+            const color = window.getComputedStyle(swatch).backgroundColor;
+            // Set the color in Alwan. The 'true' argument dispatches the 'color' event.
+            alwan.setColor(color, true);
         });
     });
 
+    // Listen for color changes from Alwan (e.g., from dragging on the palette)
     alwan.on('color', (color) => {
+        // Update the brush color state
         brushColor = color.rgba;
+
+        // The 'inputs' option in Alwan's config should handle these automatically,
+        // but we can ensure they are correct here if needed.
         hexInput.value = color.hex.toUpperCase();
         rInput.value = color.rgb.r;
         gInput.value = color.rgb.g;
         bInput.value = color.rgb.b;
-        const pickerHandle = document.querySelector('#color-picker-container div[style*="background-color"]');
-        if(pickerHandle) pickerHandle.style.backgroundColor = color.rgba;
+
+        // Find the swatch that matches the new color and give it a ring
+        let matched = false;
+        colorSwatches.forEach(swatch => {
+            const swatchHex = rgbToHex(window.getComputedStyle(swatch).backgroundColor);
+            if (swatchHex === color.hex.toUpperCase()) {
+                swatch.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
+                matched = true;
+            } else {
+                swatch.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
+            }
+        });
+
+        // If no swatch matches, remove all rings
+        if (!matched) {
+            colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
+        }
     });
 });
