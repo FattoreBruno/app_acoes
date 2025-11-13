@@ -134,12 +134,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mode Switching
     drawBtn.addEventListener('click', () => {
-        currentMode = currentMode === 'draw' ? 'pan' : 'draw';
+        if (currentMode !== 'draw') {
+            currentMode = 'draw';
+            pencilMenu.classList.remove('hidden');
+        } else {
+            currentMode = 'pan';
+            pencilMenu.classList.add('hidden');
+        }
         updateCursorAndButtonState();
     });
 
     eraserBtn.addEventListener('click', () => {
         currentMode = currentMode === 'erase' ? 'pan' : 'erase';
+        pencilMenu.classList.add('hidden'); // Always hide pencil menu in erase mode
         updateCursorAndButtonState();
     });
 
@@ -348,13 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
     };
-
-    drawBtn.addEventListener('click', () => {
-        currentMode = 'draw';
-        updateCursorAndButtonState();
-        // Toggle menu visibility when draw button is clicked
-        pencilMenu.classList.toggle('hidden');
-    });
 
     makeDraggable(pencilMenu);
 
