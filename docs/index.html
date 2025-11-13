@@ -165,74 +165,133 @@
 </div>
 
 <!-- Floating Pencil Menu -->
-<div id="pencil-menu" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 bg-[#2d3748] text-white rounded-xl shadow-2xl p-4 border border-white/10 backdrop-blur-lg z-20 cursor-move">
-    <!-- Menu Header -->
-    <div class="flex justify-between items-center mb-4">
-        <h3 class="text-sm font-bold tracking-wider uppercase text-gray-400">Tipo de Lápis</h3>
-        <button id="close-pencil-menu" class="text-gray-400 hover:text-white">
-            <span class="material-symbols-outlined">close</span>
-        </button>
-    </div>
-
-    <!-- Pencil Types -->
-    <div class="grid grid-cols-4 gap-2 mb-4">
-        <button class="flex flex-col items-center p-2 rounded-lg bg-primary/20 text-primary" data-pencil="fina">
-            <span class="material-symbols-outlined">edit</span>
-            <span class="text-xs">Fina</span>
-        </button>
-        <button class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10" data-pencil="marcador">
-            <span class="material-symbols-outlined">ink_marker</span>
-            <span class="text-xs">Marcador</span>
-        </button>
-        <button class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10" data-pencil="pincel">
-            <span class="material-symbols-outlined">brush</span>
-            <span class="text-xs">Pincel</span>
-        </button>
-        <button class="flex flex-col items-center p-2 rounded-lg hover:bg-white/10" data-pencil="spray">
-            <span class="material-symbols-outlined">spray</span>
-            <span class="text-xs">Spray</span>
-        </button>
-    </div>
-
-    <!-- Size Slider -->
-    <div class="mb-4">
-        <div class="flex justify-between items-center mb-1">
-            <label for="brush-size-slider" class="text-xs font-semibold text-gray-400">TAMANHO</label>
-            <span id="brush-size-value" class="text-xs font-mono bg-black/20 px-1.5 py-0.5 rounded">5</span>
-        </div>
-        <input id="brush-size-slider" type="range" min="1" max="100" value="5" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-    </div>
-
-    <!-- Opacity Slider -->
-    <div class="mb-4">
-        <div class="flex justify-between items-center mb-1">
-            <label for="brush-opacity-slider" class="text-xs font-semibold text-gray-400">OPACIDADE</label>
-            <span id="brush-opacity-value" class="text-xs font-mono bg-black/20 px-1.5 py-0.5 rounded">100%</span>
-        </div>
-        <input id="brush-opacity-slider" type="range" min="0" max="100" value="100" class="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer">
-    </div>
-
-    <!-- Color Section -->
-    <div>
-        <label class="text-xs font-semibold text-gray-400">COR</label>
-        <div class="grid grid-cols-8 gap-2 mt-2">
-            <!-- Color Swatches -->
-            <div class="w-6 h-6 rounded-full bg-red-500 cursor-pointer border-2 border-white"></div>
-            <div class="w-6 h-6 rounded-full bg-orange-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-yellow-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-lime-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-green-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-cyan-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-blue-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-purple-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-pink-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-white cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-gray-300 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-gray-500 cursor-pointer"></div>
-            <div class="w-6 h-6 rounded-full bg-black cursor-pointer"></div>
-        </div>
-    </div>
-    <div id="color-picker-container"></div>
+<div id="pencil-menu" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] bg-background-dark/80 text-white rounded-xl shadow-2xl p-4 border border-white/10 backdrop-blur-lg z-20 cursor-move flex flex-col gap-4">
+<div>
+<label class="text-xs font-semibold text-gray-400">TIPO DE LÁPIS</label>
+<div class="mt-2 grid grid-cols-5 gap-2">
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/20 text-primary transition-colors hover:bg-primary/30" title="Ponta Fina">
+<span class="material-symbols-outlined">edit</span>
+<span class="text-xs font-bold">Fina</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Marcador">
+<span class="material-symbols-outlined">ink_highlighter</span>
+<span class="text-xs">Marcador</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Pincel Caligráfico">
+<span class="material-symbols-outlined">draw</span>
+<span class="text-xs">Pincel</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Spray">
+<span class="material-symbols-outlined">sprinkler</span>
+<span class="text-xs">Spray</span>
+</button>
+</div>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex items-center gap-4">
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="size-slider">TAMANHO</label>
+<div class="flex items-center gap-2 mt-2">
+<input class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-black/30 accent-primary" id="size-slider" max="100" min="1" type="range" value="24"/>
+<span class="w-8 text-right text-sm font-medium">24</span>
+</div>
+</div>
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="opacity-slider">OPACIDADE</label>
+<div class="flex items-center gap-2 mt-2">
+<input class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-black/30 accent-primary" id="opacity-slider" max="100" min="1" type="range" value="100"/>
+<span class="w-8 text-right text-sm font-medium">100%</span>
+</div>
+</div>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex flex-col gap-3">
+<div>
+<label class="text-xs font-semibold text-gray-400">COR</label>
+<div class="mt-2 grid grid-cols-10 gap-x-2 gap-y-3">
+<button class="h-6 w-6 rounded-full bg-red-500 ring-2 ring-primary ring-offset-2 ring-offset-background-dark/80"></button>
+<button class="h-6 w-6 rounded-full bg-orange-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-yellow-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-lime-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-green-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-cyan-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-blue-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-purple-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-fuchsia-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-pink-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-white transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-300 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-700 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-black transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-rose-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-indigo-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-teal-400 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-amber-400 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-sky-400 transition-transform hover:scale-110"></button>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div id="color-picker-container" class="relative h-28 w-full cursor-pointer rounded-lg bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500">
+<div class="absolute inset-0 rounded-lg bg-gradient-to-t from-black to-transparent"></div>
+<div class="absolute inset-0 rounded-lg bg-gradient-to-r from-white to-transparent"></div>
+<div class="absolute top-1/2 left-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white ring-1 ring-black/50" style="background-color: rgb(239, 68, 68);"></div>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<button class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 transition-colors hover:bg-white/20" title="Conta-gotas">
+<span class="material-symbols-outlined text-xl">colorize</span>
+</button>
+<div class="flex flex-1 flex-col gap-1">
+<label class="text-xs font-semibold text-gray-400" for="hex-input">HEX</label>
+<input class="w-full rounded-md border-none bg-black/30 p-1 px-2 text-sm font-semibold uppercase text-gray-300" id="hex-input" type="text" value="#EF4444"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="r-input">R</label>
+<input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="r-input" type="text" value="239"/>
+</div>
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="g-input">G</label>
+<input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="g-input" type="text" value="68"/>
+</div>
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="b-input">B</label>
+<input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="b-input" type="text" value="68"/>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<label class="text-xs font-semibold text-gray-400">MINHAS PALETAS</label>
+<button class="flex h-5 w-5 items-center justify-center rounded-full bg-white/10 text-gray-300 transition-colors hover:bg-white/20" title="Adicionar cor atual">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<div class="group relative">
+<div class="h-6 w-6 rounded-full bg-indigo-500 ring-1 ring-white/20"></div>
+<button class="absolute -top-1 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500" title="Remover cor">
+<span class="material-symbols-outlined text-[10px]">close</span>
+</button>
+</div>
+<div class="group relative">
+<div class="h-6 w-6 rounded-full bg-teal-400 ring-1 ring-white/20"></div>
+<button class="absolute -top-1 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500" title="Remover cor">
+<span class="material-symbols-outlined text-[10px]">close</span>
+</button>
+</div>
+<div class="group relative">
+<div class="h-6 w-6 rounded-full bg-rose-500 ring-1 ring-white/20"></div>
+<button class="absolute -top-1 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500" title="Remover cor">
+<span class="material-symbols-outlined text-[10px]">close</span>
+</button>
+</div>
+</div>
+</div>
+</div>
 </div>
 
 </div>

@@ -17,15 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const drawBtn = document.getElementById('draw-tool-btn');
     const eraserBtn = document.querySelector('button[title="Borracha"]');
     const pencilMenu = document.getElementById('pencil-menu');
-    const closePencilMenuBtn = document.getElementById('close-pencil-menu');
-    const pencilTypeButtons = document.querySelectorAll('[data-pencil]');
-    const brushSizeSlider = document.getElementById('brush-size-slider');
-    const brushSizeValue = document.getElementById('brush-size-value');
-    const brushOpacitySlider = document.getElementById('brush-opacity-slider');
-    const brushOpacityValue = document.getElementById('brush-opacity-value');
-    const colorSwatches = document.querySelectorAll('.grid-cols-8 > div');
+    const pencilTypeButtons = document.querySelectorAll('.grid-cols-5 > button[title]');
+    const sizeSlider = document.getElementById('size-slider');
+    const sizeSliderValue = document.querySelector('input[id="size-slider"] + span');
+    const opacitySlider = document.getElementById('opacity-slider');
+    const opacitySliderValue = document.querySelector('input[id="opacity-slider"] + span');
+    const colorSwatches = document.querySelectorAll('.grid-cols-10 > button');
+    const hexInput = document.getElementById('hex-input');
+    const rInput = document.getElementById('r-input');
+    const gInput = document.getElementById('g-input');
+    const bInput = document.getElementById('b-input');
 
-    // Create a hidden file input for images and a color input
+    // Create a hidden file input for images
     const fileInput = document.createElement('input');
     fileInput.id = 'file-input';
     fileInput.type = 'file';
@@ -349,64 +352,48 @@ document.addEventListener('DOMContentLoaded', () => {
     drawBtn.addEventListener('click', () => {
         currentMode = 'draw';
         updateCursorAndButtonState();
-        if (pencilMenu.classList.contains('hidden')) {
-            togglePencilMenu();
-        }
+        // Toggle menu visibility when draw button is clicked
+        pencilMenu.classList.toggle('hidden');
     });
 
-    closePencilMenuBtn.addEventListener('click', togglePencilMenu);
     makeDraggable(pencilMenu);
 
     pencilTypeButtons.forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active state from all buttons
             pencilTypeButtons.forEach(btn => {
                 btn.classList.remove('bg-primary/20', 'text-primary');
+                btn.querySelector('span:last-child').classList.remove('font-bold');
             });
-            // Add active state to the clicked button
             button.classList.add('bg-primary/20', 'text-primary');
-            currentPencil = button.dataset.pencil;
+            button.querySelector('span:last-child').classList.add('font-bold');
 
-            // Set default values for each pencil type
-            if (currentPencil === 'fina') {
-                brushSize = 5;
-                brushOpacity = 1;
-            } else if (currentPencil === 'marcador') {
-                brushSize = 20;
-                brushOpacity = 0.8;
-            } else if (currentPencil === 'pincel') {
-                brushSize = 15;
-                brushOpacity = 1;
-            } else if (currentPencil === 'spray') {
-                brushSize = 25;
-                brushOpacity = 0.5;
-            }
+            const pencilTitle = button.title.toLowerCase();
+            if (pencilTitle.includes('fina')) currentPencil = 'fina';
+            else if (pencilTitle.includes('marcador')) currentPencil = 'marcador';
+            else if (pencilTitle.includes('pincel')) currentPencil = 'pincel';
+            else if (pencilTitle.includes('spray')) currentPencil = 'spray';
 
-            // Update UI
-            brushSizeSlider.value = brushSize;
-            brushSizeValue.textContent = brushSize;
-            brushOpacitySlider.value = brushOpacity * 100;
-            brushOpacityValue.textContent = `${Math.round(brushOpacity * 100)}%`;
+            // You can also set default values here if you want
         });
     });
 
-    brushSizeSlider.addEventListener('input', (e) => {
+    sizeSlider.addEventListener('input', (e) => {
         brushSize = e.target.value;
-        brushSizeValue.textContent = brushSize;
+        sizeSliderValue.textContent = brushSize;
     });
 
-    brushOpacitySlider.addEventListener('input', (e) => {
+    opacitySlider.addEventListener('input', (e) => {
         brushOpacity = e.target.value / 100;
-        brushOpacityValue.textContent = `${e.target.value}%`;
+        opacitySliderValue.textContent = `${e.target.value}%`;
     });
 
     colorSwatches.forEach(swatch => {
         swatch.addEventListener('click', () => {
-            // Remove active state from all swatches
-            colorSwatches.forEach(s => s.classList.remove('border-white'));
-            // Add active state to the clicked swatch
-            swatch.classList.add('border-white');
-            brushColor = swatch.style.backgroundColor;
+            colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
+            swatch.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
+            const color = window.getComputedStyle(swatch).backgroundColor;
+            // Set the color and dispatch the 'color' event, which will update the linked inputs.
+            alwan.setColor(color, true);
         });
     });
 
@@ -418,9 +405,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const alwan = new Alwan('#color-picker-container', {
         theme: 'dark',
         popover: false,
+        container: '#color-picker-container',
+        target: '#color-picker-container',
+        inputs: {
+            hex: '#hex-input',
+            rgb: {
+                r: '#r-input',
+                g: '#g-input',
+                b: '#b-input'
+            }
+        },
+        format: 'hex',
+        color: '#EF4444'
+    });
+
+    const rgbToHex = (rgb) => {
+        const [r, g, b] = rgb.match(/\d+/g).map(Number);
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+    };
+
+    colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
+            swatch.classList.add('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80');
+            const color = window.getComputedStyle(swatch).backgroundColor;
+            const hexColor = rgbToHex(color);
+
+            alwan.setColor(hexColor);
+            hexInput.value = hexColor; // Force update
+            brushColor = color;
+        });
     });
 
     alwan.on('color', (color) => {
         brushColor = color.rgba;
+        hexInput.value = color.hex.toUpperCase();
+        rInput.value = color.rgb.r;
+        gInput.value = color.rgb.g;
+        bInput.value = color.rgb.b;
+        const pickerHandle = document.querySelector('#color-picker-container div[style*="background-color"]');
+        if(pickerHandle) pickerHandle.style.backgroundColor = color.rgba;
     });
 });
