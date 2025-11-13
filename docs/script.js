@@ -27,6 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const rInput = document.getElementById('r-input');
     const gInput = document.getElementById('g-input');
     const bInput = document.getElementById('b-input');
+    const addCustomColorBtn = document.getElementById('add-custom-color-btn');
+    const customColorsContainer = document.getElementById('custom-colors-container');
+
+    // Custom Colors State
+    const MAX_CUSTOM_COLORS = 10;
+    let customColors = [];
+    const defaultSwatchColors = Array.from(colorSwatches).map(swatch => rgbToHex(window.getComputedStyle(swatch).backgroundColor));
 
     // Create a hidden file input for images
     const fileInput = document.createElement('input');
@@ -134,14 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mode Switching
     drawBtn.addEventListener('click', () => {
-        if (currentMode !== 'draw') {
-            currentMode = 'draw';
-            pencilMenu.classList.remove('hidden');
-        } else {
-            currentMode = 'pan';
-            pencilMenu.classList.add('hidden');
-        }
-        updateCursorAndButtonState();
+        pencilMenu.classList.toggle('hidden');
     });
 
     eraserBtn.addEventListener('click', () => {
@@ -255,6 +255,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     drawingCanvas.addEventListener('mouseup', () => {
+        if (isDrawing && currentMode === 'draw') {
+            addCustomColor(brushColor);
+        }
         isDrawing = false;
         if (isPanning) {
             isPanning = false;
@@ -414,6 +417,62 @@ document.addEventListener('DOMContentLoaded', () => {
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
     };
 
+    // --- Custom Colors Logic ---
+
+    const renderCustomColors = () => {
+        customColorsContainer.innerHTML = '';
+        customColors.forEach(color => {
+            const colorButton = document.createElement('button');
+            colorButton.className = 'group relative';
+            colorButton.innerHTML = `
+                <div class="h-6 w-6 rounded-full ring-1 ring-white/20" style="background-color: ${color};"></div>
+                <button class="absolute -top-1 -right-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full bg-gray-600 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500 remove-custom-color-btn" title="Remover cor" data-color="${color}">
+                    <span class="material-symbols-outlined text-[10px]">close</span>
+                </button>
+            `;
+            colorButton.querySelector('.h-6.w-6').addEventListener('click', () => {
+                alwan.setColor(color, true);
+            });
+            customColorsContainer.appendChild(colorButton);
+        });
+    };
+
+    const loadCustomColors = () => {
+        const savedColors = localStorage.getItem('customColors');
+        if (savedColors) {
+            customColors = JSON.parse(savedColors);
+        }
+        renderCustomColors();
+    };
+
+    const saveCustomColors = () => {
+        localStorage.setItem('customColors', JSON.stringify(customColors));
+    };
+
+    const addCustomColor = (color) => {
+        // Convert the input color (which can be rgba) to HEX for consistent comparison
+        const hexColor = rgbToHex(color).toUpperCase();
+
+        if (hexColor && !customColors.includes(hexColor) && !defaultSwatchColors.includes(hexColor)) {
+            customColors.unshift(hexColor);
+            if (customColors.length > MAX_CUSTOM_COLORS) {
+                customColors.pop();
+            }
+            saveCustomColors();
+            renderCustomColors();
+        }
+    };
+
+    customColorsContainer.addEventListener('click', (e) => {
+        const removeBtn = e.target.closest('.remove-custom-color-btn');
+        if (removeBtn) {
+            const colorToRemove = removeBtn.dataset.color;
+            customColors = customColors.filter(color => color !== colorToRemove);
+            saveCustomColors();
+            renderCustomColors();
+        }
+    });
+
     // Sync color swatches with the color picker
     colorSwatches.forEach(swatch => {
         swatch.addEventListener('click', () => {
@@ -457,4 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-primary', 'ring-offset-2', 'ring-offset-background-dark/80'));
         }
     });
+
+    // Initial Load
+    loadCustomColors();
 });
