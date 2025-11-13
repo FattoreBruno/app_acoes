@@ -24,8 +24,10 @@ def run(playwright):
     page.wait_for_selector("#editor-canvas:not(.hidden)", timeout=5000)
     time.sleep(1) # Give it a moment to render
 
-    # 2. Click the "Draw" button
+    # 2. Click the "Draw" button and close the menu
     page.click('button[title="Desenhar"]')
+    time.sleep(0.5)
+    page.click("#close-pencil-menu")
     time.sleep(0.5)
 
     # 3. Draw a line on the canvas

@@ -26,15 +26,18 @@ def run(playwright):
     page.click('button[title="Desenhar"]')
     time.sleep(0.5)
 
-    # 3. Change brush color to blue
-    # The color input is hidden, so we need to evaluate JS to set its value
-    page.evaluate("document.querySelector('input[type=color]').value = '#0000FF'")
-    # Dispatch an 'input' event to trigger the color change listener
-    page.evaluate("document.querySelector('input[type=color]').dispatchEvent(new Event('input'))")
+    # 3. Change brush color to blue by clicking the swatch
+    blue_swatch = page.locator(".bg-blue-500")
+    blue_swatch.click()
     time.sleep(0.5)
 
-    # 4. Change brush size to large
-    page.click("#brush-size-lg-btn")
+    # 4. Change brush size to large using the slider
+    size_slider = page.locator("#brush-size-slider")
+    size_slider.fill("80")
+    time.sleep(0.5)
+
+    # Close the pencil menu
+    page.click("#close-pencil-menu")
     time.sleep(0.5)
 
     # 5. Draw a line

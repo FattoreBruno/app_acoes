@@ -26,12 +26,17 @@ def run(playwright):
     time.sleep(0.5)
 
     # 3. Set Color to Magenta
-    page.evaluate("document.querySelector('input[type=color]').value = '#FF00FF'")
-    page.evaluate("document.querySelector('input[type=color]').dispatchEvent(new Event('input'))")
+    magenta_swatch = page.locator(".bg-pink-500")
+    magenta_swatch.click()
     time.sleep(0.5)
 
     # 4. Set Brush Size to Large
-    page.click("#brush-size-lg-btn")
+    size_slider = page.locator("#brush-size-slider")
+    size_slider.fill("80")
+    time.sleep(0.5)
+
+    # Close the pencil menu
+    page.click("#close-pencil-menu")
     time.sleep(0.5)
 
     # 5. Draw a diagonal line
@@ -48,7 +53,11 @@ def run(playwright):
     time.sleep(0.5)
 
     # 7. Set Eraser (Brush) Size to Medium
-    page.click("#brush-size-md-btn")
+    page.click('button[title="Desenhar"]')
+    time.sleep(0.5)
+    size_slider.fill("40")
+    time.sleep(0.5)
+    page.click("#close-pencil-menu")
     time.sleep(0.5)
 
     # 8. Erase a chunk in the middle of the line

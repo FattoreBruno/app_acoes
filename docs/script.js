@@ -14,13 +14,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const zoomPercentageInput = document.getElementById('zoom-percentage-input');
     const zoomPercentageContainer = document.getElementById('zoom-percentage-container');
     const zoomControls = document.getElementById('zoom-controls');
-    const drawBtn = document.querySelector('button[title="Desenhar"]');
+    const drawBtn = document.getElementById('draw-tool-btn');
     const eraserBtn = document.querySelector('button[title="Borracha"]');
-    const colorPickerBtn = document.getElementById('color-picker-btn');
-    const colorPreview = document.getElementById('color-preview');
-    const brushSizeSmBtn = document.getElementById('brush-size-sm-btn');
-    const brushSizeMdBtn = document.getElementById('brush-size-md-btn');
-    const brushSizeLgBtn = document.getElementById('brush-size-lg-btn');
+    const pencilMenu = document.getElementById('pencil-menu');
+    const closePencilMenuBtn = document.getElementById('close-pencil-menu');
+    const pencilTypeButtons = document.querySelectorAll('[data-pencil]');
+    const brushSizeSlider = document.getElementById('brush-size-slider');
+    const brushSizeValue = document.getElementById('brush-size-value');
+    const brushOpacitySlider = document.getElementById('brush-opacity-slider');
+    const brushOpacityValue = document.getElementById('brush-opacity-value');
+    const colorSwatches = document.querySelectorAll('.grid-cols-8 > div');
 
     // Create a hidden file input for images and a color input
     const fileInput = document.createElement('input');
@@ -28,9 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
-    const colorInput = document.createElement('input');
-    colorInput.type = 'color';
-    colorInput.style.display = 'none';
 
     // State
     let currentImage = null;
@@ -40,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMode = 'pan'; // pan, draw, erase
     let brushColor = '#FF0000'; // Default red
     let brushSize = 5; // Default medium size
+    let brushOpacity = 1; // Default opacity
+    let currentPencil = 'fina'; // Default pencil type
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
@@ -187,6 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Set composite operation for drawing vs erasing
         drawingCtx.globalCompositeOperation = currentMode === 'erase' ? 'destination-out' : 'source-over';
+        drawingCtx.globalAlpha = brushOpacity;
 
         // Set brush properties (adjusting for zoom)
         drawingCtx.strokeStyle = brushColor;
@@ -194,10 +197,23 @@ document.addEventListener('DOMContentLoaded', () => {
         drawingCtx.lineJoin = 'round';
         drawingCtx.lineCap = 'round';
 
-        drawingCtx.beginPath();
-        drawingCtx.moveTo(lastX, lastY);
-        drawingCtx.lineTo(point.x, point.y);
-        drawingCtx.stroke();
+        if (currentPencil === 'spray') {
+            drawingCtx.fillStyle = brushColor;
+            for (let i = 0; i < 10; i++) {
+                const offsetX = Math.random() * brushSize - brushSize / 2;
+                const offsetY = Math.random() * brushSize - brushSize / 2;
+                if (Math.sqrt(offsetX * offsetX + offsetY * offsetY) <= brushSize / 2) {
+                    drawingCtx.beginPath();
+                    drawingCtx.arc(point.x + offsetX, point.y + offsetY, 1, 0, Math.PI * 2);
+                    drawingCtx.fill();
+                }
+            }
+        } else {
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(lastX, lastY);
+            drawingCtx.lineTo(point.x, point.y);
+            drawingCtx.stroke();
+        }
 
         drawingCtx.restore(); // Restore to the clean state
 
@@ -291,53 +307,120 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.body.appendChild(fileInput);
-    document.body.appendChild(colorInput);
 
-    // Brush Controls
-    colorPickerBtn.addEventListener('click', () => colorInput.click());
-
-    colorInput.addEventListener('input', (e) => {
-        brushColor = e.target.value;
-        colorPreview.style.backgroundColor = brushColor;
-    });
-
-    const updateBrushSizeUI = (selectedSize) => {
-        // Reset all buttons
-        [brushSizeSmBtn, brushSizeMdBtn, brushSizeLgBtn].forEach(btn => {
-            btn.classList.remove('bg-primary/20', 'text-primary');
-            btn.querySelector('div').classList.remove('bg-primary');
-            btn.querySelector('div').classList.add('bg-gray-300');
-        });
-
-        // Activate the selected one
-        if (selectedSize === 2) { // Small
-            brushSizeSmBtn.classList.add('bg-primary/20', 'text-primary');
-            brushSizeSmBtn.querySelector('div').classList.add('bg-primary');
-        } else if (selectedSize === 5) { // Medium
-            brushSizeMdBtn.classList.add('bg-primary/20', 'text-primary');
-            brushSizeMdBtn.querySelector('div').classList.add('bg-primary');
-        } else if (selectedSize === 10) { // Large
-            brushSizeLgBtn.classList.add('bg-primary/20', 'text-primary');
-            brushSizeLgBtn.querySelector('div').classList.add('bg-primary');
-        }
+    // Pencil Menu Logic
+    const togglePencilMenu = () => {
+        pencilMenu.classList.toggle('hidden');
     };
 
-    brushSizeSmBtn.addEventListener('click', () => {
-        brushSize = 2;
-        updateBrushSizeUI(brushSize);
-    });
-    brushSizeMdBtn.addEventListener('click', () => {
-        brushSize = 5;
-        updateBrushSizeUI(brushSize);
-    });
-    brushSizeLgBtn.addEventListener('click', () => {
-        brushSize = 10;
-        updateBrushSizeUI(brushSize);
+    const makeDraggable = (element) => {
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        const onMouseDown = (e) => {
+            // Only drag if the clicked element is the menu itself, not its content
+            if (e.target === element) {
+                isDragging = true;
+                offsetX = e.clientX - element.getBoundingClientRect().left;
+                offsetY = e.clientY - element.getBoundingClientRect().top;
+                element.style.cursor = 'grabbing';
+            }
+        };
+
+        const onMouseMove = (e) => {
+            if (isDragging) {
+                element.style.left = `${e.clientX - offsetX}px`;
+                element.style.top = `${e.clientY - offsetY}px`;
+                // Remove transform to prevent conflicts with new position
+                element.style.transform = '';
+            }
+        };
+
+        const onMouseUp = () => {
+            isDragging = false;
+            element.style.cursor = 'move';
+        };
+
+        element.addEventListener('mousedown', onMouseDown);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    };
+
+    drawBtn.addEventListener('click', () => {
+        currentMode = 'draw';
+        updateCursorAndButtonState();
+        if (pencilMenu.classList.contains('hidden')) {
+            togglePencilMenu();
+        }
     });
 
+    closePencilMenuBtn.addEventListener('click', togglePencilMenu);
+    makeDraggable(pencilMenu);
+
+    pencilTypeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active state from all buttons
+            pencilTypeButtons.forEach(btn => {
+                btn.classList.remove('bg-primary/20', 'text-primary');
+            });
+            // Add active state to the clicked button
+            button.classList.add('bg-primary/20', 'text-primary');
+            currentPencil = button.dataset.pencil;
+
+            // Set default values for each pencil type
+            if (currentPencil === 'fina') {
+                brushSize = 5;
+                brushOpacity = 1;
+            } else if (currentPencil === 'marcador') {
+                brushSize = 20;
+                brushOpacity = 0.8;
+            } else if (currentPencil === 'pincel') {
+                brushSize = 15;
+                brushOpacity = 1;
+            } else if (currentPencil === 'spray') {
+                brushSize = 25;
+                brushOpacity = 0.5;
+            }
+
+            // Update UI
+            brushSizeSlider.value = brushSize;
+            brushSizeValue.textContent = brushSize;
+            brushOpacitySlider.value = brushOpacity * 100;
+            brushOpacityValue.textContent = `${Math.round(brushOpacity * 100)}%`;
+        });
+    });
+
+    brushSizeSlider.addEventListener('input', (e) => {
+        brushSize = e.target.value;
+        brushSizeValue.textContent = brushSize;
+    });
+
+    brushOpacitySlider.addEventListener('input', (e) => {
+        brushOpacity = e.target.value / 100;
+        brushOpacityValue.textContent = `${e.target.value}%`;
+    });
+
+    colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            // Remove active state from all swatches
+            colorSwatches.forEach(s => s.classList.remove('border-white'));
+            // Add active state to the clicked swatch
+            swatch.classList.add('border-white');
+            brushColor = swatch.style.backgroundColor;
+        });
+    });
 
     // Initial state
     updateZoomDisplay();
     zoomControls.classList.add('opacity-0');
-    updateBrushSizeUI(brushSize); // Set initial brush size UI
+
+    // Alwan Color Picker
+    const alwan = new Alwan('#color-picker-container', {
+        theme: 'dark',
+        popover: false,
+    });
+
+    alwan.on('color', (color) => {
+        brushColor = color.rgba;
+    });
 });

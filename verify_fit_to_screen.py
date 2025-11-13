@@ -33,6 +33,8 @@ def run(playwright):
     # 4. Activate Draw Mode and draw a line
     page.click('button[title="Desenhar"]')
     time.sleep(0.5)
+    page.click("#close-pencil-menu")
+    time.sleep(0.5)
     canvas = page.locator("#drawing-canvas")
     canvas.hover()
     page.mouse.down()
