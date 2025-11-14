@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const rInput = document.getElementById('r-input');
     const gInput = document.getElementById('g-input');
     const bInput = document.getElementById('b-input');
-    const addCustomColorBtn = document.getElementById('add-custom-color-btn');
     const customColorsContainer = document.getElementById('custom-colors-container');
 
     // Custom Colors State
@@ -41,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
     fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
 
     // State
     let currentImage = null;
@@ -141,7 +141,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mode Switching
     drawBtn.addEventListener('click', () => {
-        pencilMenu.classList.toggle('hidden');
+        if (currentMode !== 'draw') {
+            currentMode = 'draw';
+            pencilMenu.classList.remove('hidden');
+        } else {
+            currentMode = 'pan';
+            pencilMenu.classList.add('hidden');
+        }
+        updateCursorAndButtonState();
     });
 
     eraserBtn.addEventListener('click', () => {
