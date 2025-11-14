@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html class="" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ferramenta de Edição de Imagem</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#13a4ec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101c22",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/alwan@2/dist/css/alwan.min.css"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-display overflow-hidden">
+<div class="relative flex h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root">
+<main class="flex h-full grow flex-col">
+<div class="flex flex-1 items-center justify-center p-4 sm:p-6 md:p-8">
+<div class="relative flex h-full w-full max-w-7xl items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-600/60 bg-black/10">
+<canvas id="editor-canvas" class="hidden absolute top-0 left-0 w-full h-full"></canvas>
+<canvas id="drawing-canvas" class="hidden absolute top-0 left-0 w-full h-full"></canvas>
+<div id="image-prompt" class="flex flex-col items-center gap-4 text-center text-gray-400">
+<span class="material-symbols-outlined text-6xl text-gray-500">image</span>
+<div class="flex flex-col">
+<p class="font-semibold text-gray-300">Importe sua imagem</p>
+<p class="text-sm">Arraste e solte um arquivo ou clique para selecionar</p>
+</div>
+<button class="mt-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90">
+                Selecionar Arquivo
+              </button>
+<div class="mt-4 flex flex-col items-center gap-3">
+<div class="h-px w-20 bg-gray-600/60"></div>
+<div class="flex items-center gap-4 text-sm">
+<button class="flex items-center gap-2 text-gray-400 transition-colors hover:text-primary">
+<span class="material-symbols-outlined text-base">upload</span>
+<span>Importar do seu computador</span>
+</button>
+<div class="h-4 w-px bg-gray-600/60"></div>
+<button class="flex items-center gap-2 text-gray-400 transition-colors hover:text-primary">
+<span class="material-symbols-outlined text-base">content_paste</span>
+<span>Colar imagem</span>
+</button>
+<div class="h-4 w-px bg-gray-600/60"></div>
+<button class="flex items-center gap-2 text-gray-400 transition-colors hover:text-primary">
+<span class="material-symbols-outlined text-base">link</span>
+<span>Importar de URL</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div id="zoom-controls" class="fixed left-4 top-1/2 flex -translate-y-1/2 flex-col items-center gap-1 rounded-xl border border-white/10 bg-background-dark/50 p-1.5 shadow-2xl backdrop-blur-lg z-10 transition-opacity duration-300 ease-in-out">
+<button id="zoom-in-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom In">
+<span class="material-symbols-outlined text-2xl">zoom_in</span>
+</button>
+<button id="reset-zoom-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Redefinir Zoom">
+<span class="material-symbols-outlined text-2xl">zoom_in_map</span>
+</button>
+<div id="zoom-percentage-container" class="w-10 flex items-center justify-center rounded-md bg-black/20 transition-all duration-300 ease-in-out h-8 my-1">
+<input type="text" id="zoom-percentage-input" class="w-full bg-transparent text-center text-xs font-semibold text-white outline-none" value="100%"/>
+</div>
+<button id="zoom-out-btn" class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Zoom Out">
+<span class="material-symbols-outlined text-2xl">zoom_out</span>
+</button>
+</div>
+<div class="fixed right-4 top-1/2 flex h-auto max-h-[calc(100vh-4rem)] -translate-y-1/2 flex-col items-center gap-2 rounded-xl border border-white/10 bg-background-dark/50 p-2 shadow-2xl backdrop-blur-lg z-10">
+<div class="flex h-full w-full flex-col gap-2 overflow-y-auto pr-1">
+<div class="group relative">
+<div class="flex h-20 w-20 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border-2 border-primary/80 transition-all hover:border-primary active:cursor-grabbing" draggable="true" title="Arraste para editar">
+<img alt="Miniatura de imagem gerada por IA de uma paisagem fantástica" class="h-full w-full rounded-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtQ6A0Gbt63ZaEknbUrcWJvMaW7SN0hlE37C7p8v2GTYfn00vkEIcLRoDCmLyY3Cmrpz1FCtnNtIXHGMXnknB35_OFW51DvoYNHBAuIRxMoxd1khCF4psIGr_w7nqSnCPBuCL_kn-gY_0nyJihwSF6JVZTLTFIVqdj82_boMoba-2WNTEoI102nXg7AxWKbFHJefuahUOxhnI8_Uj4-S_5duTUJCzoOClctmi2_Mqeysl3XOkXP5l_yUL9z3cYFdCOBaWEBmInQgM"/>
+</div>
+<button class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80" title="Excluir imagem">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+<div class="group relative">
+<div class="flex h-20 w-20 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border-2 border-transparent transition-all hover:border-primary active:cursor-grabbing" draggable="true" title="Arraste para editar">
+<img alt="Miniatura de imagem gerada por IA de um animal futurista" class="h-full w-full rounded-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDg70cBlqCIm5RAQYgTyOjfyCKGpTNF1R8Hk7yoLbuvez2UacLMb64fFF3hu5O-itM-6meViUDZVVShvJje5ybQuedVE3Ne3Cq4fRe3Wyb0fkjQ47oz-qCimmQL_3jGy5Z0ZRgchS_9CgugEsOPT3MF-jJkOLJCtqx_EnLzR03s3Cto--Ww3pfbai3XSIZj9_7mP71QuvFQ9wScqPz51T0991mjNKMV0ubHVkgJWMlNASrNHBbFFMZXEspHJdy0_481clVR6EBTrX8"/>
+</div>
+<button class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80" title="Excluir imagem">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+<div class="group relative">
+<div class="flex h-20 w-20 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border-2 border-transparent transition-all hover:border-primary active:cursor-grabbing" draggable="true" title="Arraste para editar">
+<img alt="Miniatura de imagem gerada por IA de uma cidade subaquática" class="h-full w-full rounded-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZY-stiZITsHf-w4pYwV1jQKNw2Nyn0XzNv5WfiS3T0FclSAPLh1Ms27DFVGK_IIwEP26LInrb8gFObiyQqgB_HbLF2l4oZJ4bcGLzN8zwbGNcCjWnGiXmWMeZBoFACq0YFrL7Hono63gEBnEa28kIegsmPIEI4ppjdVNg6rXbVJhmKrGaRcSjVAgT1absAiKcp_QqB-GyIggnZxuYZ0IwiBm8ue8RT_yIr9WNJrAGSETNnGugWDOKFxn8VIw0gg5HimSn5Z2XaGY"/>
+</div>
+<button class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80" title="Excluir imagem">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+<div class="group relative">
+<div class="flex h-20 w-20 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border-2 border-transparent transition-all hover:border-primary active:cursor-grabbing" draggable="true" title="Arraste para editar">
+<img alt="Miniatura de imagem gerada por IA de uma floresta encantada" class="h-full w-full rounded-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG2JWRLcllfRcre9iWn6_DuZBY9x2tK9ynmkRXVMZbwzsv5_ZxpCQelpHszd_cGVU0tQ5yZKIYMxflxMhF1HethOv92YpEIK8c8zO4iPrd9bqPK559z-fPWaALZmkaN2ST_rKMOJSzsbND3RU9mtTcdoBpuOix03oJRLCfJ9cRyp9_A3EUSRyiFd3_LexYQ4U-Gw5Jo4QTdTuPR4XL7LCjkVy76xkNdyFNpoONDYc0TuXpRFDlSeKQOimZDYt5EKDEmtbm5TtSVs4"/>
+</div>
+<button class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80" title="Excluir imagem">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+<div class="group relative">
+<div class="flex h-20 w-20 flex-shrink-0 cursor-grab items-center justify-center rounded-lg border-2 border-transparent transition-all hover:border-primary active:cursor-grabbing" draggable="true" title="Arraste para editar">
+<img alt="Miniatura de imagem gerada por IA de um retrato abstrato" class="h-full w-full rounded-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANFL_8YABOhFWB4_guOe1vFype6xmLpnNmnNROTz--kb2begCg-WivEPOQDsB7cJmJINSp20uj2cLQG5fvupX87_HXbkG_dMhZ3PFV-TsuNqH9B47GejzXHvewgX0VlZy4cRSLBiz8MWb9-h8WpHUz3qtWggvqwTGpLJn0GbwfmVfjPNhoipnLZPWS30kbF8jPnDI8tFR_k_UvksPsH4s-iem7eV_ZPefux683gNWt2-IPz3dsIFnXjbx_SKaFee8AqWd6SXYwTWI"/>
+</div>
+<button class="absolute top-1 right-1 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80" title="Excluir imagem">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+</div>
+<div class="fixed bottom-0 left-1/2 w-full max-w-max -translate-x-1/2 p-4 z-10">
+<div class="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-background-dark/50 p-2 shadow-2xl backdrop-blur-lg">
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Importar Imagem">
+<span class="material-symbols-outlined text-2xl">upload_file</span>
+</button>
+<div class="mx-2 h-6 w-px bg-white/10"></div>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Desfazer">
+<span class="material-symbols-outlined text-2xl">undo</span>
+</button>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Refazer">
+<span class="material-symbols-outlined text-2xl">redo</span>
+</button>
+<div class="mx-2 h-6 w-px bg-white/10"></div>
+<button id="draw-tool-btn" class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Desenhar">
+<span class="material-symbols-outlined text-2xl">edit</span>
+</button>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Borracha">
+<span class="material-symbols-outlined text-2xl">ink_eraser</span>
+</button>
+<button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-primary/20 hover:text-primary" title="Adicionar Texto">
+<span class="material-symbols-outlined text-2xl">title</span>
+</button>
+<div class="mx-2 h-6 w-px bg-white/10"></div>
+<div class="flex items-center gap-2">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-gray-400">auto_awesome</span>
+<input class="h-12 w-80 rounded-lg border border-white/10 bg-black/20 pl-10 pr-4 text-white placeholder-gray-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="Adicione sugestões e contexto para a IA..." type="text"/>
+</div>
+<button class="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-4 text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90" title="Gerar Imagem com IA">
+<span class="material-symbols-outlined text-2xl">auto_fix_high</span>
+<span class="text-sm font-bold">Processar</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- Floating Pencil Menu -->
+<div id="pencil-menu" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[340px] bg-background-dark/80 text-white rounded-xl shadow-2xl p-4 border border-white/10 backdrop-blur-lg z-20 cursor-move flex flex-col gap-4">
+<div>
+<label class="text-xs font-semibold text-gray-400">TIPO DE LÁPIS</label>
+<div class="mt-2 grid grid-cols-5 gap-2">
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg bg-primary/20 text-primary transition-colors hover:bg-primary/30" title="Ponta Fina">
+<span class="material-symbols-outlined">edit</span>
+<span class="text-xs font-bold">Fina</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Marcador">
+<span class="material-symbols-outlined">ink_highlighter</span>
+<span class="text-xs">Marcador</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Pincel Caligráfico">
+<span class="material-symbols-outlined">draw</span>
+<span class="text-xs">Pincel</span>
+</button>
+<button class="flex h-12 w-12 flex-col items-center justify-center rounded-lg text-gray-300 transition-colors hover:bg-white/10" title="Spray">
+<span class="material-symbols-outlined">sprinkler</span>
+<span class="text-xs">Spray</span>
+</button>
+</div>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex items-center gap-4">
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="size-slider">TAMANHO</label>
+<div class="flex items-center gap-2 mt-2">
+<input class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-black/30 accent-primary" id="size-slider" max="100" min="1" type="range" value="24"/>
+<span class="w-8 text-right text-sm font-medium">24</span>
+</div>
+</div>
+<div class="flex-1">
+<label class="text-xs font-semibold text-gray-400" for="opacity-slider">OPACIDADE</label>
+<div class="flex items-center gap-2 mt-2">
+<input class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-black/30 accent-primary" id="opacity-slider" max="100" min="1" type="range" value="100"/>
+<span class="w-8 text-right text-sm font-medium">100%</span>
+</div>
+</div>
+</div>
+<div class="h-px w-full bg-white/10"></div>
+<div class="flex flex-col gap-3">
+<div>
+<label class="text-xs font-semibold text-gray-400">COR</label>
+<div class="mt-2 grid grid-cols-10 gap-x-2 gap-y-3">
+<button class="h-6 w-6 rounded-full bg-red-500 ring-2 ring-primary ring-offset-2 ring-offset-background-dark/80"></button>
+<button class="h-6 w-6 rounded-full bg-orange-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-yellow-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-lime-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-green-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-cyan-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-blue-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-purple-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-fuchsia-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-pink-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-white transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-300 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-gray-700 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-black transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-rose-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-indigo-500 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-teal-400 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-amber-400 transition-transform hover:scale-110"></button>
+<button class="h-6 w-6 rounded-full bg-sky-400 transition-transform hover:scale-110"></button>
+</div>
+</div>
+<!-- Advanced Color Picker Container -->
+<div id="color-picker-container" class="w-full h-48 my-4"></div>
+<!-- Input fields for color values -->
+<div class="flex flex-col gap-3">
+    <div class="flex items-center gap-2">
+        <button class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10 transition-colors hover:bg-white/20" title="Conta-gotas">
+            <span class="material-symbols-outlined text-xl">colorize</span>
+        </button>
+        <div class="flex flex-1 flex-col gap-1">
+            <label class="text-xs font-semibold text-gray-400" for="hex-input">HEX</label>
+            <input class="w-full rounded-md border-none bg-black/30 p-1 px-2 text-sm font-semibold uppercase text-gray-300" id="hex-input" type="text" value="#EF4444"/>
+        </div>
+    </div>
+    <div class="flex items-center gap-2">
+        <div class="flex-1">
+            <label class="text-xs font-semibold text-gray-400" for="r-input">R</label>
+            <input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="r-input" type="text" value="239"/>
+        </div>
+        <div class="flex-1">
+            <label class="text-xs font-semibold text-gray-400" for="g-input">G</label>
+            <input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="g-input" type="text" value="68"/>
+        </div>
+        <div class="flex-1">
+            <label class="text-xs font-semibold text-gray-400" for="b-input">B</label>
+            <input class="w-full rounded-md border-none bg-black/30 p-1 text-center text-sm font-semibold text-gray-300" id="b-input" type="text" value="68"/>
+        </div>
+    </div>
+</div>
+<div class="flex flex-col gap-2">
+    <div class="flex items-center gap-2">
+        <label class="text-xs font-semibold text-gray-400">Minhas cores</label>
+    </div>
+    <div id="custom-colors-container" class="flex items-center gap-2 mt-2">
+        <!-- Custom colors will be dynamically added here -->
+    </div>
+</div>
+</div>
+</div>
+
+</div>
+<script src="https://cdn.jsdelivr.net/npm/alwan@2/dist/js/alwan.min.js"></script>
+<script src="script.js"></script>
+</body></html>
